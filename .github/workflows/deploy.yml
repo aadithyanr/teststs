@@ -25,21 +25,34 @@ jobs:
             # Pull latest code
             git pull || git clone ${{ secrets.REPO_URL }} .
             
-            # Update Node.js to a compatible version
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs
+            # Update Node.js to a compatible version (if not already installed)
+            if ! command -v node &> /dev/null || [ $(node -v | cut -d. -f1 | tr -d 'v') -lt 18 ]; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            fi
             
-            # Install dependencies with legacy peer deps flag to resolve conflicts
-            npm install --legacy-peer-deps
-            
-            # Make a small fix to package.json for date-fns compatibility
+            # Fix dependency conflict in package.json
             sed -i 's/"date-fns": "4.1.0"/"date-fns": "3.6.0"/g' package.json
             
-            # Reinstall with updated dependencies
+            # Install dependencies with legacy peer deps flag
             npm install --legacy-peer-deps
             
             # Build the application
             npx next build
             
-            # Start/restart with PM2
+            # Check if PM2 is installed, install it if not
+            if ! command -v pm2 &> /dev/null; then
+              # Install PM2 for the current user only to avoid permission issues
+              npm install pm2 -g
+            fi
+            
+            # Start or restart the application with PM2
             pm2 restart blog || pm2 start npm --name "blog" -- start
+            
+            # Save PM2 process list and set to start on reboot
+            pm2 save
+            
+            # Display the status
+            pm2 ls
+            
+            echo "Deployment completed successfully!"
