@@ -25,9 +25,21 @@ jobs:
             # Pull latest code
             git pull || git clone ${{ secrets.REPO_URL }} .
             
-            # Install dependencies and build
-            npm install
-            npm run build
+            # Update Node.js to a compatible version
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            
+            # Install dependencies with legacy peer deps flag to resolve conflicts
+            npm install --legacy-peer-deps
+            
+            # Make a small fix to package.json for date-fns compatibility
+            sed -i 's/"date-fns": "4.1.0"/"date-fns": "3.6.0"/g' package.json
+            
+            # Reinstall with updated dependencies
+            npm install --legacy-peer-deps
+            
+            # Build the application
+            npx next build
             
             # Start/restart with PM2
             pm2 restart blog || pm2 start npm --name "blog" -- start
