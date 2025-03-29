@@ -1,0 +1,33 @@
+name: Deploy to AWS t3.micro
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Navigate to your app directory (create if it doesn't exist)
+            mkdir -p ~/blog-app
+            cd ~/blog-app
+            
+            # Pull latest code
+            git pull || git clone ${{ secrets.REPO_URL }} .
+            
+            # Install dependencies and build
+            npm install
+            npm run build
+            
+            # Start/restart with PM2
+            pm2 restart blog || pm2 start npm --name "blog" -- start
