@@ -42,37 +42,43 @@ export const metadata: Metadata = {
 // Get all posts directly in the page component
 async function getAllPosts(): Promise<Post[]> {
   const postsDirectory = path.join(process.cwd(), "content")
-  const filenames = fs.readdirSync(postsDirectory)
 
-  const postsPromises = filenames
-    .filter((filename) => filename.endsWith(".md") || filename.endsWith(".mdx"))
-    .map(async (filename) => {
-      const filePath = path.join(postsDirectory, filename)
-      const fileContents = fs.readFileSync(filePath, "utf8")
-      const { data, content } = matter(fileContents)
+  try {
+    const filenames = fs.readdirSync(postsDirectory)
 
-      // Process content for list view (we don't need the full HTML for the list)
-      const processedContent = await remark().use(remarkGfm).use(html, { sanitize: false }).process(content)
-      const contentHtml = processedContent.toString()
+    const postsPromises = filenames
+      .filter((filename) => filename.endsWith(".md") || filename.endsWith(".mdx"))
+      .map(async (filename) => {
+        const filePath = path.join(postsDirectory, filename)
+        const fileContents = fs.readFileSync(filePath, "utf8")
+        const { data, content } = matter(fileContents)
 
-      return {
-        slug: filename.replace(/\.mdx?$/, ""),
-        title: data.title || "",
-        description: data.description || "",
-        date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
-        category: data.category || "Uncategorized",
-        thumbnail: data.thumbnail || "/placeholder.svg",
-        author: {
-          name: data.author?.name || "Anonymous",
-          role: data.author?.role || "",
-          avatar: data.author?.avatar || "/placeholder.svg",
-        },
-        content: contentHtml, // Add the content property to fix the TypeScript error
-      }
-    })
+        // Process content for list view (we don't need the full HTML for the list)
+        const processedContent = await remark().use(remarkGfm).use(html, { sanitize: false }).process(content)
+        const contentHtml = processedContent.toString()
 
-  const posts = await Promise.all(postsPromises)
-  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        return {
+          slug: filename.replace(/\.mdx?$/, ""),
+          title: data.title || "",
+          description: data.description || "",
+          date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+          category: data.category || "Uncategorized",
+          thumbnail: data.thumbnail || "/placeholder.svg",
+          author: {
+            name: data.author?.name || "Anonymous",
+            role: data.author?.role || "",
+            avatar: data.author?.avatar || "/placeholder.svg",
+          },
+          content: contentHtml, // Add the content property to fix the TypeScript error
+        }
+      })
+
+    const posts = await Promise.all(postsPromises)
+    return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  } catch (error) {
+    console.error("Error loading posts:", error)
+    return []
+  }
 }
 
 export default async function BlogPage() {
@@ -93,4 +99,3 @@ export default async function BlogPage() {
     </div>
   )
 }
-

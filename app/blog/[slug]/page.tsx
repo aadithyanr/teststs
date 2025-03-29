@@ -116,7 +116,9 @@ export async function generateStaticParams() {
 
 // Generate metadata for each post
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  const post = await getPostBySlug(params.slug)
+  // Fix for Next.js 15 warning - await params before using
+  const { slug } = params
+  const post = await getPostBySlug(slug)
 
   if (!post) {
     return {
@@ -154,11 +156,13 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  console.log("Rendering post page for slug:", params.slug)
-  const post = await getPostBySlug(params.slug)
+  // Fix for Next.js 15 warning - await params before using
+  const { slug } = params
+  console.log("Rendering post page for slug:", slug)
+  const post = await getPostBySlug(slug)
 
   if (!post) {
-    console.error(`Post not found for slug: ${params.slug}`)
+    console.error(`Post not found for slug: ${slug}`)
     notFound()
   }
 
@@ -243,4 +247,3 @@ export default async function PostPage({ params }: PostPageProps) {
     </div>
   )
 }
-

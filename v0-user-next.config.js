@@ -14,11 +14,8 @@ const nextConfig = {
     ],
     dangerouslyAllowSVG: true,
   },
-  // Force the App Router to use the filesystem-based routing
-  experimental: {
-    appDir: true,
-  },
+  // Remove experimental options that might cause issues
+  output: "standalone", // Add this for better Vercel deployment
 }
 
 module.exports = nextConfig
-
